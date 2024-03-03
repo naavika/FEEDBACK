@@ -1,0 +1,160 @@
+<html>
+    <body>
+        <h1 id="main-heading">Feedback System</h1>
+        <h2 id="basket-heading">Overall Ratings</h2>
+        <div id="overall-ratings">
+            <p>* <span id="star-1">0</span></p>
+            <p>** <span id="star-2">0</span></p>
+            <p>*** <span id="star-3">0</span></p>
+            <p>**** <span id="star-4">0</span></p>
+            <p>***** <span id="star-5">0</span></p>
+        </div>
+    
+        <h3 id="form-heading">Feedback Form</h3>
+        <form onsubmit="handleFormSubmit(event)">
+            <label for="name">Enter Your Name:</label>
+            <input type="text" id="name" name="name" required>
+    
+            <label for="rating">Choose Rating:</label>
+            <select id="rating" name="rating" required>
+                <option value="1">1</option>
+                <option value="2">2</option>
+                <option value="3">3</option>
+                <option value="4">4</option>
+                <option value="5">5</option>
+            </select>
+    
+            <button type="submit">SUBMIT</button>
+        </form>
+    
+        <h4 id="last-heading">ALL FEEDBACKS</h4>
+        <ul id="listOfUsers" class="listOfUsers">
+        </ul>
+
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/axios/1.6.7/axios.min.js"></script>
+        <script>
+            const mainHeading = document.getElementById("main-heading");
+            mainHeading.style.textAlign = "center";
+
+            async function handleFormSubmit(event) {
+                event.preventDefault();
+                const name = event.target.name.value;
+                const rating = event.target.rating.value;
+
+                const newData = {
+                    name,
+                    rating
+                };
+
+                try {
+                    if (localStorage.getItem(rating) !== null) {
+                        await updateFeedback(rating, myObj);
+                    } else {
+                        await addFeedback(myObj);
+                    }
+                } catch (error) {
+                    console.log(error);
+                }
+            }
+            
+            async function updateFeedback(rating, updatedData) {
+                try {
+                    const response = await axios.put(`https://crudcrud.com/api/04a6933d7846422eb15b62f635d15b72/${rating}`, updatedData);
+                    showUpdatedUserOnScreen(response.data);
+                    console.log(response);
+                } catch (err) {
+                    console.log(err);
+                }
+            }
+
+            async function addFeedback(newData) {
+                try {
+                    const response = await axios.post("https://crudcrud.com/api/04a6933d7846422eb15b62f635d15b72/feedbackData", newData);
+                    showNewUserOnScreen(response.data);
+                    console.log(response);
+                } catch (err) {
+                    console.log(err);
+                }
+            }
+
+            window.addEventListener("DOMContentLoaded", async () => {
+                try {
+                    const response = await axios.get("https://crudcrud.com/api/04a6933d7846422eb15b62f635d15b72/feedbackData");
+                    for (var i = 0; i < response.data.length; i++) {
+                        showNewUserOnScreen(response.data[i]);
+                    }
+                } catch (error) {
+                    console.log(error);
+                }
+            });
+
+            function showNewUserOnScreen(user) {
+                const userList = document.getElementById('listOfUsers');
+                const childHTML = `<li id='${user.rating}'>${user.name}-${user.rating}
+                    <button onclick=deleteUser("${user.rating}")>Delete</button>
+                    <button onclick=editUserDetailsUser('${user.rating}','${user.name}')>Edit</button>
+                </li>`;
+
+                userList.innerHTML = userList.innerHTML + childHTML;
+                const starRating = document.getElementById(`star-${user.rating}`);
+                starRating.innerText = parseInt(starRating.innerText) + 1;
+            }
+
+            function showUpdatedUserOnScreen(user) {
+                const userList = document.getElementById('listOfUsers');
+                const existingNode = document.getElementById(user.rating);
+                const updatedHTML = `${user.name}-${user.rating}
+                    <button onclick=deleteUser("${user.rating}")>Delete</button>
+                    <button onclick=editUserDetailsUser('${user.rating}','${user.name}')>Edit</button>`;
+
+                if (existingNode) {
+                    existingNode.innerHTML = updatedHTML;
+                } else {
+                    const childHTML = `<li id='${user.rating}'>${updatedHTML}</li>`;
+                    userList.innerHTML = userList.innerHTML + childHTML;
+                }
+
+                const starRating = document.getElementById(`star-${user.rating}`);
+                starRating.innerText = parseInt(starRating.innerText) + 1;
+            }
+
+            function deleteUser(rating) {
+                localStorage.removeItem(rating);
+                deleteFeedback(rating);
+                removeUserFromScreen(rating);
+                updateStarRating(rating, -1);
+            }
+
+            async function deleteFeedback(rating) {
+                try {
+                    const response = await axios.delete(`https://crudcrud.com/api/04a6933d7846422eb15b62f635d15b72/feedbackData/${rating}`);
+                    showDeleteUserOnScreen(response.data);
+                    console.log(response);
+                } catch (err) {
+                    console.log(err);
+                }
+            }
+
+            function removeUserFromScreen(rating) {
+                const parentNode = document.getElementById("listOfUsers");
+                const childNodeToBeDeleted = document.getElementById(rating);
+
+                if (childNodeToBeDeleted) {
+                    parentNode.removeChild(childNodeToBeDeleted);
+                }
+            }
+
+            function updateStarRating(rating, increment) {
+                const starRating = document.getElementById(`star-${rating}`);
+                const currentCount = parseInt(starRating.innerText);
+                starRating.innerText = currentCount + increment;
+            }
+
+            function editUserDetailsUser(rating, name) {
+                document.getElementById('rating').value = rating;
+                document.getElementById('name').value = name;
+                deleteUser(rating);
+            }
+        </script>
+    </body>
+</html>
